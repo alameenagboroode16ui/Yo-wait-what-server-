@@ -1,245 +1,235 @@
-
 const http = require('http');
 const WebSocket = require('ws');
 const PORT = process.env.PORT || 10000;
+const LIVE_URL = 'https://yo-wait-whot-server-4.onrender.com';
+const WS_URL = 'wss://yo-wait-whot-server-4.onrender.com';
 
-const HTML = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Yo Waitwhat</title>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXX" crossorigin="anonymous"></script>
-<style>
-:root{--brown:#5a3a22;--dark:#2b1a0f;--gold:#d9b26f;--cream:#fbf5ea}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;margin:0}
-body{background:radial-gradient(120% 90% at 50% 0%,#6b4424,#3a2414 60%,#24150b);color:#fbf5ea;font-family:Georgia,serif;overflow:hidden;background-size:cover;background-position:center;background-attachment:fixed}
-.screen{position:fixed;inset:0;display:flex;flex-direction:column;padding:12px 16px 14px;gap:10px;overflow-y:auto}
-h1{margin:6px 0 0;text-align:center;font-size:clamp(34px,9vw,52px);font-weight:700;letter-spacing:.06em;color:var(--gold)}
-.tag{text-align:center;margin:0;font-size:16px;color:#e8d6b8;font-style:italic}
-.credit{text-align:center;font-size:12px;color:#c9b08a;margin-top:auto}
-.glass{background:linear-gradient(#f6eee0,#ebdcc3);border:1px solid #c9a878;border-radius:14px;padding:14px;color:#3a2414;box-shadow:0 6px 16px rgba(0,0,0,.35)}
-.lbl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#6b4424;font-weight:700;margin:0 0 8px}
-input[type=text]{width:100%;padding:12px 14px;border-radius:10px;border:1px solid #b38f5c;background:#fffdf7;color:#3a2414;font-size:16px}
-.btn{border:1px solid #c9a878;border-radius:10px;padding:12px 16px;font-size:15px;color:#fbf5ea;background:linear-gradient(#8b5a2b,#5a3a22);cursor:pointer;text-align:center}
-.btn.solid{background:linear-gradient(#e0bd7e,#b8893f);color:#2b1a0f;font-weight:700}.btn.mg{background:linear-gradient(#a2412b,#7a2c1b)}.btn.blue{background:linear-gradient(#5a6b5a,#3f4d3f)}.btn.sm{padding:8px 12px;font-size:13px;border-radius:8px}
-#profilePic{width:88px;height:88px;border-radius:50%;border:3px solid var(--gold);object-fit:cover;display:none;margin:0 auto 8px}
-#chatWrap{position:relative;width:100%;max-width:560px;margin:0 auto}
-#chatBubbles{position:absolute;bottom:100px;left:0;right:0;display:flex;flex-direction:column;gap:6px;pointer-events:none;align-items:center}
-.bubble{background:var(--cream);color:#2b1a0f;border:1px solid #c9a878;padding:8px 12px;border-radius:16px;font-size:13px;max-width:80%;box-shadow:0 4px 12px rgba(0,0,0,.4)}
-.emoji{font-size:22px;cursor:pointer;user-select:none;padding:4px 6px;background:#fffdf7;border:1px solid #c9a878;border-radius:8px;display:inline-block;margin:2px}
-.emoji:active{transform:scale(0.9)}
-#emojiBar{display:flex;gap:6px;overflow-x:auto;padding:6px;background:rgba(246,238,224,.95);border-radius:10px 10px 0 0;border:1px solid #c9a878;border-bottom:none;scrollbar-width:none}
-#emojiBar::-webkit-scrollbar{display:none}
-.adBox{width:100%;max-width:560px;margin:8px auto;background:rgba(0,0,0,.25);border-radius:10px;min-height:60px;display:flex;align-items:center;justify-content:center}
-#adInterstitial{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;align-items:center;justify-content:center;flex-direction:column;padding:0}
-#adTopBar{width:100%;background:#1a1a1a;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;position:absolute;top:0;left:0}
-#adContentBox{background:#f6eee0;border-radius:14px;padding:14px;max-width:420px;width:92%;text-align:center;color:#3a2414;margin-top:60px}
-</style></head><body>
-<div class="screen" id="menuScreen">
-<h1>YO WAITWHAT</h1><p class="tag">The Naija Whot Game</p>
+const HTML = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>YO WAITWHAT</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{background:radial-gradient(#5a3a22,#3a2414);color:#fff;font-family:Arial;overflow:hidden;height:100vh}#app{max-width:560px;margin:0 auto;height:100vh;display:flex;flex-direction:column}.glass{background:rgba(255,248,220,0.92);border:2px solid #c8a882;border-radius:16px;color:#3a2414}.btn{background:linear-gradient(#c8a882,#8b5a2b);color:#fff;padding:10px 14px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;margin:3px}#bgMusic{position:fixed}#wallpaper{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:-1;display:none}#adOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.88);z-index:9999;display:none;flex-direction:column;justify-content:center;align-items:center}#chatBubble{position:fixed;bottom:130px;left:50%;transform:translateX(-50%);background:#fff;color:#000;padding:10px 16px;border-radius:20px;display:none;z-index:100;font-weight:bold}</style></head><body>
+<img id="wallpaper"/><audio id="bgMusic" loop></audio>
+<div id="app">
+<div style="padding:8px;display:flex;justify-content:space-between;background:rgba(0,0,0,0.3)"><div><img id="profilePic" style="width:40px;height:40px;border-radius:50%;border:2px solid gold;display:none"><span id="playerNameDisplay">Guest</span></div><span style="font-size:10px">${LIVE_URL}</span></div>
 
-<div class="glass" style="text-align:center">
-<img id="profilePic" src=""><div id="profileName" style="font-weight:700;font-size:18px;margin-bottom:6px">Guest Player</div>
-<input type="file" id="profilePhotoInput" accept="image/*" hidden>
-<button class="btn sm blue" onclick="document.getElementById('profilePhotoInput').click()">Add Profile Photo From Gallery</button>
-<input type="text" id="nameInput" placeholder="Enter your name" style="margin-top:10px">
+<div id="menu" class="glass" style="margin:8px;padding:12px;text-align:center;overflow-y:auto;flex:1">
+<h1 style="font-size:36px;color:#8b5a2b">YO<br>WAITWHAT</h1>
+<input id="nameInput" placeholder="Enter name" style="width:100%;padding:10px;border-radius:8px;margin:6px 0">
+<div style="display:flex;gap:4px"><input type="file" id="photoInput" accept="image/*" style="display:none"><button class="btn" onclick="photoInput.click()">📸 PHOTO</button><input type="file" id="wpInput" accept="image/*" style="display:none"><button class="btn" onclick="wpInput.click()">🖼️ WALLPAPER</button></div>
+
+<div style="margin:10px 0;padding:8px;border:1px dashed #8b5a2b;border-radius:10px">
+<b>🏠 PRIVATE CODE MODE</b><br>
+<button class="btn" onclick="createPrivate()">Create Code</button>
+<div style="display:flex;margin-top:6px"><input id="codeInput" placeholder="Enter code" style="flex:1;padding:8px;border-radius:8px"><button class="btn" onclick="joinPrivate()">Join</button></div>
+<div id="codeDisplay" style="font-size:20px;font-weight:bold;margin-top:6px;color:#8b5a2b"></div>
 </div>
 
-<div class="glass"><div class="lbl">Wallpaper From Your Gallery</div><div style="display:flex;gap:6px;flex-wrap:wrap">
-<input type="file" id="bgInput" accept="image/*" hidden>
-<button class="btn sm" onclick="document.getElementById('bgInput').click()">Choose Wallpaper</button>
-<button class="btn sm mg" onclick="removeWallpaper()">Remove</button></div></div>
+<b>🌍 ONLINE MATCH</b><br>
+<button class="btn" style="width:100%;margin:3px 0;background:linear-gradient(#2ecc71,#27ae60)" onclick="playOnlineMode(2)">2 PLAYERS ONLINE - Find Anyone</button>
+<button class="btn" style="width:100%;margin:3px 0;background:linear-gradient(#3498db,#2980b9)" onclick="playOnlineMode(3)">3 PLAYERS ONLINE - Find 3</button>
+<button class="btn" style="width:100%;margin:3px 0;background:linear-gradient(#e67e22,#d35400)" onclick="playOnlineMode(4)">4 PLAYERS ONLINE - Find 4 + Bot Fill</button>
+<div id="searchInfo" style="font-size:12px;margin-top:6px"></div>
 
-<div class="glass"><div class="lbl">Warri Voice - 5 Shouts + Permanent Sound</div>
-<div style="display:flex;gap:6px;flex-wrap:wrap">
-<input type="file" id="customSoundInput" accept="audio/*" hidden>
-<button class="btn sm" onclick="document.getElementById('customSoundInput').click()">Add Audio From File</button>
-<button class="btn sm blue" onclick="testAllSounds()">Test All Warri Voices</button>
-<button class="btn sm" id="muteBtn" onclick="toggleMute()">🔊 Voice On</button>
-</div><div id="soundList" style="font-size:11px;margin-top:8px;color:#6b4424">Permanent built-in: Pick Two joh! / Pick Three / Do di calms jor! / Make you na pick di card jor! / Na me be captain Warri!</div></div>
-
-<div style="display:flex;flex-direction:column;gap:8px;max-width:560px;width:100%;margin:0 auto">
-<button class="btn solid" id="playBtn">PLAY ONLINE</button>
-<button class="btn" id="settingsBtn">⚙ SETTINGS</button>
+<div class="glass" style="padding:8px;margin:8px 0;text-align:left">
+<b>🎵 Background Music (replaces jazz)</b><br>
+<input type="file" id="musicInput" accept="audio/*" style="width:100%"><br>
+<button class="btn" onclick="toggleMusic()">On/Off</button><button class="btn" onclick="clearMusic()">Clear</button><span id="musicStatus" style="font-size:11px"> No music</span>
 </div>
 
-<div class="adBox"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXX" data-ad-slot="1234567890" data-ad-format="auto" data-full-width-responsive="true"></ins><script>(adsbygoogle=window.adsbygoogle||[]).push({});</script></div>
-<div class="credit">Yo Waitwhat © 2026 - Mature Edition - Ads every 2 multiplayer games + Emojis</div>
+<div class="glass" style="padding:8px;margin:8px 0;text-align:left">
+<b>🎤 Warri Voices (5) + Custom MP3</b><br>
+<div style="font-size:11px">
+Pick2 <input type="file" accept="audio/*" onchange="saveCustomSound('pick2',this.files[0])"><br>
+Pick3 <input type="file" accept="audio/*" onchange="saveCustomSound('pick3',this.files[0])"><br>
+HoldOn <input type="file" accept="audio/*" onchange="saveCustomSound('holdon',this.files[0])"><br>
+Market <input type="file" accept="audio/*" onchange="saveCustomSound('market',this.files[0])"><br>
+Whot <input type="file" accept="audio/*" onchange="saveCustomSound('whot',this.files[0])"><br>
+</div>
+<button class="btn" onclick="testAllVoices()">Test</button><button class="btn" onclick="clearVoices()">Clear</button><button class="btn" onclick="toggleMute()" id="muteBtn">Mute</button>
 </div>
 
-<div class="screen" id="gameScreen" style="display:none">
-<div style="display:flex;justify-content:space-between;align-items:center;max-width:560px;width:100%;margin:0 auto"><div id="gameInfo" style="color:#e8d6b8;font-size:13px">Searching...</div><button class="btn sm" onclick="location.reload()">Exit</button></div>
-<div id="playersArea" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;max-width:560px;margin:0 auto"></div>
-
-<div id="chatWrap">
-<div id="chatBubbles"></div>
-<div id="emojiBar">
-<span class="emoji" onclick="sendEmoji('😂')">😂</span>
-<span class="emoji" onclick="sendEmoji('😍')">😍</span>
-<span class="emoji" onclick="sendEmoji('🔥')">🔥</span>
-<span class="emoji" onclick="sendEmoji('😭')">😭</span>
-<span class="emoji" onclick="sendEmoji('😎')">😎</span>
-<span class="emoji" onclick="sendEmoji('🤣')">🤣</span>
-<span class="emoji" onclick="sendEmoji('😒')">😒</span>
-<span class="emoji" onclick="sendEmoji('🙏')">🙏</span>
-<span class="emoji" onclick="sendEmoji('💀')">💀</span>
-<span class="emoji" onclick="sendEmoji('👏')">👏</span>
-<span class="emoji" onclick="sendEmoji('😤')">😤</span>
-<span class="emoji" onclick="sendEmoji('🥺')">🥺</span>
-<span class="emoji" onclick="sendEmoji('🃏')">🃏</span>
-<span class="emoji" onclick="sendEmoji('Pick Two joh! 😂')">💥</span>
-</div>
-<div style="display:flex;gap:6px;background:linear-gradient(#f6eee0,#ebdcc3);border:1px solid #c9a878;border-radius:0 0 10px 10px;padding:6px;">
-<input id="chatInput" type="text" placeholder="Type message..." maxlength="120" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid #b38f5c;background:#fffdf7;color:#3a2414;font-size:14px;">
-<button id="chatSend" class="btn solid sm">SEND</button></div>
 </div>
 
-<div id="tableArea" class="glass" style="max-width:560px;width:100%;margin:0 auto;min-height:120px;display:flex;align-items:center;justify-content:center">Table</div>
-<div id="handArea" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:560px;margin:0 auto"></div>
+<div id="gameArea" style="display:none;flex:1;flex-direction:column">
+<div id="gameInfo" class="glass" style="padding:8px;text-align:center;font-weight:bold">Connecting...</div>
+<div id="playersList" style="display:flex;gap:6px;padding:6px;overflow-x:auto"></div>
+<div id="tableArea" class="glass" style="flex:1;margin:8px;display:flex;justify-content:center;align-items:center;flex-direction:column">Table</div>
+<div id="handArea" style="display:flex;gap:6px;padding:8px;overflow-x:auto;background:rgba(0,0,0,0.2)"></div>
+<div id="emojiBar" style="display:flex;gap:6px;padding:6px;overflow-x:auto;background:rgba(0,0,0,0.35)"></div>
+<div style="display:flex;gap:6px;padding:8px"><input id="chatInput" placeholder="Type..." style="flex:1;padding:10px;border-radius:20px;border:none"><button class="btn" onclick="sendChat()">SEND</button></div>
 </div>
-
-<div id="adInterstitial">
-<div id="adTopBar"><span>Advertisement - Game continues in <span id="adTimer">5</span>s</span><button id="closeAdBtn" style="display:none;background:#fff;color:#000;border:none;border-radius:6px;padding:6px 12px;font-weight:700" onclick="closeInterstitial()">✕ CANCEL / CLOSE</button></div>
-<div id="adContentBox"><div style="font-weight:700;margin-bottom:8px">Thanks for playing! Quick ad supports the game</div>
-<div id="adSlot"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXX" data-ad-slot="1234567890" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
-<div style="font-size:11px;color:#6b4424;margin-top:8px">Ad shows every 2 multiplayer games</div></div>
 </div>
-
+<div id="chatBubble"></div>
+<div id="adOverlay"><div style="background:#000;width:90%;max-width:380px;border-radius:12px"><div style="display:flex;justify-content:space-between;padding:12px;background:#111;color:#fff"><span id="adTimer">5s</span><button id="closeAdBtn" style="display:none" onclick="closeAd()">✕ Close</button></div><div style="height:200px;background:#222;display:flex;align-items:center;justify-content:center">AD HERE</div></div></div>
 <script>
-let ws, myName=localStorage.getItem('playerName')||'Player';
+const WS_LINK="${WS_URL}"; let ws=null, myId=null, roomId=null, lastBubble=0;
+const warriLines={pick2:"Pick Two joh!",pick3:"Pick Three!",holdon:"Do di calms jor!",market:"Make you na pick di card jor!",whot:"Na me be captain Warri!"};
 let customSounds=JSON.parse(localStorage.getItem('customSounds')||'{}');
-let audioCtx, unlocked=false, muted=false;
-let gameCount=parseInt(localStorage.getItem('multiGameCount')||'0');
-let lastChatTime=0;
-function getAudioCtx(){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
-function unlockAudio(){ if(unlocked) return; unlocked=true; try{ getAudioCtx().resume(); if('speechSynthesis' in window){ speechSynthesis.getVoices(); } }catch(e){} document.removeEventListener('click',unlockAudio); document.removeEventListener('touchstart',unlockAudio); }
-document.addEventListener('click',unlockAudio); document.addEventListener('touchstart',unlockAudio);
-
-let pd=localStorage.getItem('profilePic'); if(pd){ const img=document.getElementById('profilePic'); img.src=pd; img.style.display='block'; }
-document.getElementById('profilePhotoInput').addEventListener('change',e=>{
-  const f=e.target.files[0]; if(!f) return; const r=new FileReader();
-  r.onload=ev=>{ localStorage.setItem('profilePic',ev.target.result); document.getElementById('profilePic').src=ev.target.result; document.getElementById('profilePic').style.display='block'; };
-  r.readAsDataURL(f);
-});
-
-let wd=localStorage.getItem('gameWallpaper'); if(wd) document.body.style.background='url('+wd+') center/cover no-repeat fixed, radial-gradient(120% 90% at 50% 0%,#6b4424,#3a2414 60%,#24150b)';
-document.getElementById('bgInput').addEventListener('change',e=>{
-  const f=e.target.files[0]; if(!f) return; const r=new FileReader();
-  r.onload=ev=>{ localStorage.setItem('gameWallpaper',ev.target.result); document.body.style.background='url('+ev.target.result+') center/cover no-repeat fixed, radial-gradient(120% 90% at 50% 0%,#6b4424,#3a2414 60%,#24150b)'; };
-  r.readAsDataURL(f);
-});
-function removeWallpaper(){ localStorage.removeItem('gameWallpaper'); document.body.style.background='radial-gradient(120% 90% at 50% 0%,#6b4424,#3a2414 60%,#24150b)'; }
-
-document.getElementById('customSoundInput').addEventListener('change',e=>{
-  const f=e.target.files[0]; if(!f) return; const r=new FileReader();
-  r.onload=ev=>{ customSounds[f.name]=ev.target.result; localStorage.setItem('customSounds',JSON.stringify(customSounds)); document.getElementById('soundList').innerHTML+='<div>✓ '+f.name+' added</div>'; };
-  r.readAsDataURL(f);
-});
-
-const LINES={'pick-two':"Pick Two joh! You dey whine!",'pick-three':"Collect Three jor! Oya collect am!",'holdon':"Do di calms jor! Calm down!",'general':"Make you na pick di card jor! Na you go pick am!",'captain':"Na me be captain Warri! Na me dey run am!",'pickTwo':"Pick Two joh! You dey whine!",'pickThree':"Collect Three jor! Oya collect am!"};
-function toggleMute(){ muted=!muted; document.getElementById('muteBtn').textContent=muted?'🔇 Voice Off':'🔊 Voice On'; }
-function playPermanent(type){
-  try{
-    const ctx=getAudioCtx(); const times=type.includes('three')?[0,0.2,0.4]:type.includes('two')?[0,0.25]:[0];
-    times.forEach(d=>{ const o=ctx.createOscillator(),g=ctx.createGain(); o.type='square'; o.frequency.value=type.includes('three')?880:type.includes('two')?720:600; o.connect(g); g.connect(ctx.destination); g.gain.setValueAtTime(0.6,ctx.currentTime+d); g.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+d+0.22); o.start(ctx.currentTime+d); o.stop(ctx.currentTime+d+0.24); });
-    if('speechSynthesis' in window && LINES[type]){ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(LINES[type]); u.rate=1.05; u.pitch=0.85; u.volume=1; speechSynthesis.speak(u); }
-  }catch(e){}
+const bgMusic=document.getElementById('bgMusic'); let musicOn=localStorage.getItem('musicOn')!=='0';
+if(localStorage.getItem('bgMusicFile')){bgMusic.src=localStorage.getItem('bgMusicFile');bgMusic.volume=0.35;}
+if(localStorage.getItem('whotPhoto')){profilePic.src=localStorage.getItem('whotPhoto');profilePic.style.display='inline-block';}
+if(localStorage.getItem('whotWallpaper')){wallpaper.src=localStorage.getItem('whotWallpaper');wallpaper.style.display='block';}
+nameInput.value=localStorage.getItem('whotName')||'';
+photoInput.addEventListener('change',e=>{const r=new FileReader();r.onload=()=>{localStorage.setItem('whotPhoto',r.result);profilePic.src=r.result;profilePic.style.display='inline-block';};r.readAsDataURL(e.target.files[0]);});
+wpInput.addEventListener('change',e=>{const r=new FileReader();r.onload=()=>{localStorage.setItem('whotWallpaper',r.result);wallpaper.src=r.result;wallpaper.style.display='block';};r.readAsDataURL(e.target.files[0]);});
+musicInput.addEventListener('change',e=>{const r=new FileReader();r.onload=()=>{localStorage.setItem('bgMusicFile',r.result);bgMusic.src=r.result;bgMusic.volume=0.35;bgMusic.play().catch(()=>{});musicStatus.innerText='Playing';};r.readAsDataURL(e.target.files[0]);});
+function saveCustomSound(t,f){const r=new FileReader();r.onload=()=>{customSounds[t]=r.result;localStorage.setItem('customSounds',JSON.stringify(customSounds));alert(t+' saved');};r.readAsDataURL(f);}
+function clearVoices(){localStorage.removeItem('customSounds');customSounds={};alert('cleared');}
+function clearMusic(){localStorage.removeItem('bgMusicFile');bgMusic.pause();bgMusic.src='';musicStatus.innerText='No music';}
+function toggleMusic(){if(!bgMusic.src)return alert('Upload music first');if(bgMusic.paused){bgMusic.play();musicStatus.innerText='Playing';}else{bgMusic.pause();musicStatus.innerText='Paused';}}
+function toggleMute(){localStorage.setItem('mute',localStorage.getItem('mute')==='1'?'0':'1');muteBtn.innerText=localStorage.getItem('mute')==='1'?'Unmute':'Mute';}
+function testAllVoices(){Object.keys(warriLines).forEach((k,i)=>setTimeout(()=>playWarri(k),i*1500));}
+function playWarri(type){if(localStorage.getItem('mute')==='1')return;try{if(customSounds[type]){new Audio(customSounds[type]).play();return;}}catch(e){}try{speechSynthesis.speak(new SpeechSynthesisUtterance(warriLines[type]));}catch(e){}}
+function showBubble(t){const n=Date.now();if(n-lastBubble<1000)return;lastBubble=n;chatBubble.innerText=t;chatBubble.style.display='block';setTimeout(()=>chatBubble.style.display='none',6000);}
+function createPrivate(){const code=Math.random().toString(36).substring(2,6).toUpperCase();codeDisplay.innerText='Your Code: '+code;joinPrivateWithCode(code,true);}
+function joinPrivate(){const code=codeInput.value.trim().toUpperCase();if(!code)return alert('Enter code');joinPrivateWithCode(code,false);}
+function joinPrivateWithCode(code,isCreator){const name=nameInput.value.trim()||'Guest';localStorage.setItem('whotName',name);menu.style.display='none';gameArea.style.display='flex';if(localStorage.getItem('bgMusicFile')&&musicOn){bgMusic.play().catch(()=>{});}connectWS(name,'private',code,isCreator);}
+function playOnlineMode(count){const name=nameInput.value.trim()||'Guest';localStorage.setItem('whotName',name);menu.style.display='none';gameArea.style.display='flex';if(localStorage.getItem('bgMusicFile')&&musicOn){bgMusic.play().catch(()=>{});}connectWS(name,'online',count,false);}
+function connectWS(name,mode,val,isCreator){
+ ws=new WebSocket(WS_LINK);
+ ws.onopen=()=>{ws.send(JSON.stringify({type:'join',name}));if(mode==='private'){ws.send(JSON.stringify({type:'joinPrivate',code:val,isCreator}));searchInfo.innerText='Private Room: '+val;gameInfo.innerText='Private Room '+val+' - Waiting...';}else{ws.send(JSON.stringify({type:'findGame',count:val}));gameInfo.innerText='Searching for '+val+' players...';searchInfo.innerText='';}};
+ ws.onmessage=e=>{
+  const d=JSON.parse(e.data);
+  if(d.type==='joined')myId=d.id;
+  if(d.type==='privateCreated'){roomId=d.roomId;gameInfo.innerText='Room '+d.code+' Created - Share code! Players: '+d.players.length;}
+  if(d.type==='waiting'){gameInfo.innerText='Waiting for '+d.need+' more... Bot will fill in '+d.botIn+'s if not enough';}
+  if(d.type==='gameStart'){
+   roomId=d.roomId;gameInfo.innerText='Game Started! Mode: '+d.mode+' Players: '+d.players.join(', ');playersList.innerHTML='';d.players.forEach(p=>{const div=document.createElement('div');div.className='glass';div.style.padding='6px';div.innerText=p+(p.includes('BOT')?' 🤖':'');playersList.appendChild(div);});tableArea.innerHTML='<h2>Game Started!</h2><p>'+d.players.length+' Players</p>';if(d.bots>0)showBubble(d.bots+' Bot(s) added to complete game');}
+  if(d.type==='chat'){showBubble(d.text);if(d.text.includes('🃏'))playWarri('pick2');}
+  if(d.type==='botPlay'){showBubble(d.bot+' played '+d.card);playWarri(d.voice);gameInfo.innerText=d.bot+' played - '+d.card;}
+  if(d.type==='gameEnd'){gameInfo.innerText='Winner: '+d.winner;if(Math.random()<0.5)showInterstitial();}
+ };
+ ws.onclose=()=>{gameInfo.innerText='Reconnecting...';setTimeout(()=>connectWS(name,mode,val,isCreator),2000);};
 }
-function playWhotSound(type){ if(!unlocked) unlockAudio(); if(muted) return; const custom=customSounds[type]||customSounds[type+'.mp3']; if(custom){ new Audio(custom).play().catch(()=>playPermanent(type)); return; } const a=new Audio('/sounds/whot/'+type+'.mp3'); a.play().catch(()=>playPermanent(type)); }
-function playSound(t){ const m={pickTwo:'pick-two',pickThree:'pick-three',cardDrop:'general'}; playWhotSound(m[t]||t); }
-function testAllSounds(){ playWhotSound('pick-two'); setTimeout(()=>playWhotSound('pick-three'),1300); setTimeout(()=>playWhotSound('holdon'),2600); setTimeout(()=>playWhotSound('general'),3900); setTimeout(()=>playWhotSound('captain'),5200); }
+function sendChat(){const txt=chatInput.value.trim();if(!txt)return;showBubble(txt);if(ws&&ws.readyState===1)ws.send(JSON.stringify({type:'chat',text:txt,roomId}));chatInput.value='';}
+chatInput.addEventListener('keydown',e=>{if(e.key==='Enter')sendChat();});
+const emojis=["😂","😍","🔥","😭","😎","🤣","😒","🙏","💀","👏","😤","🥺","🃏","💥"];emojis.forEach(em=>{const b=document.createElement('button');b.innerText=em;b.style.cssText='font-size:22px;background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:42px;height:42px';b.onclick=()=>{showBubble(em);if(ws&&ws.readyState===1)ws.send(JSON.stringify({type:'chat',text:em,roomId}));if(em==='🃏')playWarri('pick2');};emojiBar.appendChild(b);});
+function showInterstitial(){adOverlay.style.display='flex';let c=5;adTimer.innerText='Continue in '+c+'s';closeAdBtn.style.display='none';const iv=setInterval(()=>{c--;adTimer.innerText='Continue in '+c+'s';if(c<=0){clearInterval(iv);adTimer.innerText='Advertisement';closeAdBtn.style.display='block';}},1000);}
+function closeAd(){adOverlay.style.display='none';}
+<\/script></body></html>`;
 
-function showBubble(text,fromName){
-  const now=Date.now(); if(now-lastChatTime<1000 && fromName!=='You') return; if(fromName!=='You') lastChatTime=now;
-  const wrap=document.getElementById('chatBubbles'); const b=document.createElement('div'); b.className='bubble'; b.textContent=(fromName?fromName+': ':'')+text; wrap.appendChild(b);
-  setTimeout(()=>{ b.style.opacity='0'; setTimeout(()=>b.remove(),300); },6000);
-}
-function sendChat(){ const inp=document.getElementById('chatInput'); if(!inp.value.trim()) return; if(ws&&ws.readyState===1) ws.send(JSON.stringify({type:'chat',text:inp.value})); showBubble(inp.value,'You'); inp.value=''; }
-function sendEmoji(e){
-  if(ws && ws.readyState===1) ws.send(JSON.stringify({type:'chat', text:e}));
-  showBubble(e,'You');
-  if(e.includes('Pick Two')) playWhotSound('pick-two');
-}
-document.getElementById('chatSend').addEventListener('click',sendChat);
-document.getElementById('chatInput').addEventListener('keydown',e=>{ if(e.key==='Enter') sendChat(); });
+let idCounter=1; let rooms={}; let queues={2:[],3:[],4:[]}; let privateRooms={};
 
-function showInterstitialAd(){
-  try{(adsbygoogle=window.adsbygoogle||[]).push({});}catch(e){}
-  const overlay=document.getElementById('adInterstitial'); const timerEl=document.getElementById('adTimer'); const closeBtn=document.getElementById('closeAdBtn');
-  overlay.style.display='flex'; let t=5; timerEl.textContent=t; closeBtn.style.display='none';
-  const iv=setInterval(()=>{ t--; timerEl.textContent=t; if(t<=0){ clearInterval(iv); closeBtn.style.display='block'; timerEl.textContent='0'; } },1000);
-}
-function closeInterstitial(){ document.getElementById('adInterstitial').style.display='none'; }
-function onMultiplayerGameEnd(){
-  gameCount++; localStorage.setItem('multiGameCount',gameCount);
-  if(gameCount%2===0){ showInterstitialAd(); }
-}
+function makeId(){return 'p'+(idCounter++);}
+function makeCode(){return Math.random().toString(36).substring(2,6).toUpperCase();}
+function makeRoomId(){return Math.random().toString(36).substring(2,8).toUpperCase();}
 
-document.getElementById('profileName').textContent=myName; document.getElementById('nameInput').value=myName;
-document.getElementById('nameInput').addEventListener('change',e=>{ myName=e.target.value.trim()||'Player'; localStorage.setItem('playerName',myName); document.getElementById('profileName').textContent=myName; });
+function startGame(players, mode, code=null){
+ const roomId=makeRoomId();
+ const realPlayers=players.filter(p=>p.ws);
+ const botCount=players.length - realPlayers.length;
+ const playerNames=players.map(p=>p.name);
+ rooms[roomId]={id:roomId, players, mode, code};
 
-const SERVER_URL=(location.protocol==='https:'?'wss://':'ws://')+location.host;
-document.getElementById('playBtn').addEventListener('click',()=>{
-  document.getElementById('menuScreen').style.display='none'; document.getElementById('gameScreen').style.display='flex';
-  ws=new WebSocket(SERVER_URL);
-  ws.onopen=()=>{ ws.send(JSON.stringify({type:'join',name:myName})); ws.send(JSON.stringify({type:'findGame',name:myName})); document.getElementById('gameInfo').textContent='Searching opponent...'; };
-  ws.onmessage=(ev)=>{
-    const data=JSON.parse(ev.data);
-    if(data.type==='chat') showBubble(data.text,data.name);
-    if(data.type==='sound') playSound(data.sound);
-    if(data.type==='gameEnd'){ onMultiplayerGameEnd(); document.getElementById('gameInfo').textContent='Game Over - '+data.winner+' won!'; }
-    if(data.type==='gameStart'){ document.getElementById('gameInfo').textContent='Room: '+data.roomId; }
-  };
-});
-window.onCardPlayed=(card)=>{ if(card.number===2||card.action==='pick2') playWhotSound('pick-two'); else if(card.number===3||card.action==='pick3') playWhotSound('pick-three'); else if(card.action==='holdon') playWhotSound('holdon'); else if(card.action==='generalmarket') playWhotSound('general'); else if(card.action==='whot') playWhotSound('captain'); };
-</script>
-</body></html>`;
-
-const server = http.createServer((req,res)=>{
-  if(req.url==='/' || req.url==='/index.html'){
-    res.writeHead(200,{'Content-Type':'text/html'});
-    res.end(HTML);
-  } else {
-    res.writeHead(404); res.end('Not found');
+ players.forEach(p=>{
+  if(p.ws && p.ws.readyState===1){
+   p.ws.roomId=roomId;
+   p.ws.send(JSON.stringify({type:'gameStart', roomId, mode, players:playerNames, bots:botCount}));
   }
-});
-const wss = new WebSocket.Server({server});
-let waiting=null;
-let rooms=new Map();
-wss.on('connection',(ws)=>{
-  ws.id=Math.random().toString(36).slice(2);
-  ws.on('message',(msg)=>{
-    try{
-      const data=JSON.parse(msg);
-      if(data.type==='join'){ ws.name=data.name||'Player'; }
-      if(data.type==='findGame'){
-        if(waiting && waiting!==ws && waiting.readyState===1){
-          const roomId=Math.random().toString(36).slice(2,8);
-          const room={id:roomId, players:[waiting, ws]};
-          rooms.set(roomId, room);
-          waiting.roomId=roomId; ws.roomId=roomId;
-          [waiting, ws].forEach(p=> p.send(JSON.stringify({type:'gameStart', roomId, players:[{name:waiting.name},{name:ws.name}]})));
-          waiting=null;
-        } else { waiting=ws; ws.send(JSON.stringify({type:'waiting', msg:'Waiting for opponent...'})); }
-      }
-      if(data.type==='chat'){
-        const room=rooms.get(ws.roomId);
-        if(room){
-          room.players.forEach(p=>{ if(p.readyState===1) p.send(JSON.stringify({type:'chat', name:ws.name, text:String(data.text||'').slice(0,120), from:ws.id})); });
+ });
+
+ if(botCount>0){
+  let turn=0;
+  const botInterval=setInterval(()=>{
+   if(!rooms[roomId]){clearInterval(botInterval);return;}
+   const bots=players.filter(p=>!p.ws);
+   if(bots.length===0){clearInterval(botInterval);return;}
+   const bot=bots[turn % bots.length];
+   const cards=['Pick Two','Pick Three','Hold On','Market','Whot!','Number 5'];
+   const card=cards[Math.floor(Math.random()*cards.length)];
+   const voices={ 'Pick Two':'pick2','Pick Three':'pick3','Hold On':'holdon','Market':'market','Whot!':'whot'};
+   realPlayers.forEach(rp=>{
+    if(rp.ws.readyState===1) rp.ws.send(JSON.stringify({type:'botPlay', bot:bot.name, card, voice:voices[card]||'whot'}));
+   });
+   turn++;
+   if(turn>20){clearInterval(botInterval); }
+  }, 4000);
+ }
+
+ // cleanup after 10min
+ setTimeout(()=>{delete rooms[roomId];}, 600000);
+}
+
+const server=http.createServer((req,res)=>{if(req.url==='/healthz'){res.writeHead(200);res.end('ok');return;}res.writeHead(200,{'Content-Type':'text/html'});res.end(HTML);});
+const wss=new WebSocket.Server({server});
+wss.on('connection',ws=>{
+ ws.id=makeId();
+ ws.on('message',msg=>{
+  try{
+   const data=JSON.parse(msg);
+   if(data.type==='join'){ws.playerName=data.name||'Guest';ws.send(JSON.stringify({type:'joined',id:ws.id}));}
+   
+   if(data.type==='joinPrivate'){
+    const code=data.code.toUpperCase();
+    if(!privateRooms[code]) privateRooms[code]={code, players:[], roomId:makeRoomId()};
+    const room=privateRooms[code];
+    room.players.push({name:ws.playerName, ws, id:ws.id});
+    ws.roomId=room.roomId; ws.privateCode=code;
+    ws.send(JSON.stringify({type:'privateCreated', code, roomId:room.roomId, players:room.players.map(p=>p.name)}));
+    room.players.forEach(p=>{if(p.ws!==ws && p.ws.readyState===1) p.ws.send(JSON.stringify({type:'chat', text: ws.playerName+' joined room '+code}));});
+    if(room.players.length>=2){
+     startGame([...room.players], 'PRIVATE', code);
+     delete privateRooms[code];
+    }
+   }
+
+   if(data.type==='findGame'){
+    const count=parseInt(data.count)||2;
+    if(count===2||count===3||count===4){
+     queues[count].push({name:ws.playerName, ws, id:ws.id});
+     ws.queueCount=count;
+     ws.queueTime=Date.now();
+     
+     if(queues[count].length>=count){
+      const players=queues[count].splice(0,count);
+      startGame(players, count+'P ONLINE');
+     }else{
+      const need=count - queues[count].length;
+      ws.send(JSON.stringify({type:'waiting', need, botIn:20}));
+      // Bot fill timer for 4 players mode
+      if(count===4){
+       setTimeout(()=>{
+        if(!ws.roomId && queues[4].find(p=>p.id===ws.id)){
+         const waiting=queues[4].filter(p=>!p.ws.roomId);
+         if(waiting.length>=2){ // at least 2 humans
+          const humans=waiting.splice(0, waiting.length);
+          queues[4]=queues[4].filter(p=>!humans.find(h=>h.id===p.id));
+          const botNeeded=4 - humans.length;
+          const bots=[];
+          for(let i=0;i<botNeeded;i++) bots.push({name:'BOT '+(i+1), ws:null, id:'bot'+i});
+          startGame([...humans, ...bots], '4P ONLINE + BOT');
+         }
         }
+       }, 20000); // 20 sec bot fill
       }
-      if(data.type==='play' && data.card){
-        const room=rooms.get(ws.roomId);
-        let sound='cardDrop';
-        if(data.card.value==='2' || data.card.number===2) sound='pickTwo';
-        if(room){ room.players.forEach(p=>{ if(p.readyState===1) p.send(JSON.stringify({type:'sound', sound})); }); }
+      // Bot fill for 3 players too
+      if(count===3){
+       setTimeout(()=>{
+        if(!ws.roomId && queues[3].find(p=>p.id===ws.id)){
+         const waiting=queues[3].filter(p=>!p.ws.roomId);
+         if(waiting.length===2){
+          const humans=waiting.splice(0,2);
+          queues[3]=queues[3].filter(p=>!humans.find(h=>h.id===p.id));
+          startGame([...humans, {name:'BOT 1', ws:null, id:'bot1'}], '3P ONLINE + BOT');
+         }
+        }
+       }, 20000);
       }
-      if(data.type==='gameOver'){
-        const room=rooms.get(ws.roomId);
-        if(room){ room.players.forEach(p=>{ if(p.readyState===1) p.send(JSON.stringify({type:'gameEnd', winner:ws.name})); }); }
-      }
-    }catch(e){}
-  });
-  ws.on('close',()=>{
-    if(waiting===ws) waiting=null;
-    if(ws.roomId){ rooms.delete(ws.roomId); }
-  });
+     }
+    }
+   }
+
+   if(data.type==='chat'){
+    const room=rooms[data.roomId]||rooms[ws.roomId];
+    if(room) room.players.forEach(p=>{if(p.ws && p.ws.readyState===1) p.ws.send(JSON.stringify({type:'chat', text:data.text, from:ws.id}));});
+   }
+
+  }catch(e){console.log(e);}
+ });
+
+ ws.on('close',()=>{
+  Object.keys(queues).forEach(k=>{queues[k]=queues[k].filter(p=>p.id!==ws.id);});
+  if(ws.privateCode && privateRooms[ws.privateCode]){privateRooms[ws.privateCode].players=privateRooms[ws.privateCode].players.filter(p=>p.id!==ws.id); if(privateRooms[ws.privateCode].players.length===0) delete privateRooms[ws.privateCode];}
+  if(ws.roomId && rooms[ws.roomId]){rooms[ws.roomId].players=rooms[ws.roomId].players.filter(p=>p.id!==ws.id); if(rooms[ws.roomId].players.length===0) delete rooms[ws.roomId];}
+ });
 });
-server.listen(PORT, ()=> console.log('Server running on '+PORT));
+
+server.listen(PORT,()=>console.log('YO WAITWHAT LIVE at '+LIVE_URL));
