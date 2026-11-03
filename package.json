@@ -1,0 +1,7 @@
+{
+  "name": "whot-server",
+  "main": "whot-server.js",
+  "scripts": {
+    "start": "node whot-server.js"
+  }
+}
